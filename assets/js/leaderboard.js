@@ -7,12 +7,20 @@ class LeaderboardManager {
         this.recentScoresKey = 'recentScores';
         this.maxRecentScores = 10; // Keep track of 10 most recent scores
         
-        // Initialize storage if needed
-        if (!localStorage.getItem(this.recentScoresKey)) {
-            console.log('Initializing storage with empty arrays');
-            localStorage.setItem(this.storageKey, JSON.stringify({}));
-            localStorage.setItem(this.recentScoresKey, JSON.stringify([]));
-        }
+        // Clear any existing data (temporary fix for removing sample data)
+        this.clearAllData();
+        
+        // Initialize storage with empty arrays
+        console.log('Initializing storage with empty arrays');
+        localStorage.setItem(this.storageKey, JSON.stringify({}));
+        localStorage.setItem(this.recentScoresKey, JSON.stringify([]));
+    }
+
+    // Clear all stored data
+    clearAllData() {
+        console.log('Clearing all stored data');
+        localStorage.removeItem(this.storageKey);
+        localStorage.removeItem(this.recentScoresKey);
     }
 
     // Get all scores for an artist
