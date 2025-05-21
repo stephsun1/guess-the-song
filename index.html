@@ -4,37 +4,265 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guess the Song</title>
+    
+    <!-- Alpine.js CDN -->
+    <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js CDN -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/custom.css">
+    
+    <!-- Immediate visual feedback -->
+    <script>
+        console.log('Page starting to load...');
+        window.addEventListener('load', () => {
+            console.log('All resources loaded');
+            // Hide loading indicator after a short delay
+            setTimeout(() => {
+                const loadingIndicator = document.getElementById('loading-container');
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+            }, 1000);
+        });
+    </script>
 </head>
 <body class="bg-yellow-50 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Welcome Screen -->
-        <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
-            <h1 class="text-4xl font-bold mb-6">GUESS THE SONG</h1>
-            <p class="text-gray-600 mb-8">It's a game where you guess the song. Good luck.</p>
-            
-            <div class="mb-6">
-                <input type="text" 
-                       placeholder="Type artist" 
-                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <!-- Loading Container -->
+    <div id="loading-container" class="fixed inset-0 bg-yellow-50 z-50 flex flex-col items-center justify-center">
+        <div class="text-center">
+            <div class="text-xl mb-4">Loading game...</div>
+            <div class="bg-blue-500 text-white p-2">
+                If you see this message for more than a few seconds, scripts might not be loading correctly.
             </div>
-            
-            <button class="bg-blue-500 text-white px-8 py-2 rounded-lg hover:bg-blue-600 transition-colors">
-                Start
-            </button>
         </div>
     </div>
 
-    <!-- Game Scripts -->
-    <script src="assets/js/app.js"></script>
-    <script src="assets/js/spotify.js"></script>
+    <!-- Game Scripts (Load before Alpine initializes) -->
+    <script src="assets/js/test-data.js"></script>
+    <script src="assets/js/music.js"></script>
     <script src="assets/js/audio.js"></script>
     <script src="assets/js/game.js"></script>
     <script src="assets/js/storage.js"></script>
+    <script src="assets/js/leaderboard.js"></script>
+    <script src="assets/js/app.js"></script>
+
+    <!-- Main Game Container -->
+    <div x-data="gameData" 
+         x-init="$nextTick(() => { init(); })"
+         class="container mx-auto px-4 py-8 min-h-screen flex items-center justify-center">
+        
+        <!-- Welcome Screen -->
+        <div x-show="currentScreen === 'welcome'" 
+             x-cloak
+             x-transition:enter="animate-fade-in"
+             class="max-w-md w-full mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-6 animate-slide-in">GUESS THE SONG</h1>
+            <p class="text-gray-600 mb-8 text-lg">It's a game where you guess the song. Good luck.</p>
+            
+            <div class="mb-6">
+                <div class="relative">
+                    <input type="text" 
+                           x-model="artist"
+                           @input="searchArtists()"
+                           @keydown.arrow-down.prevent="selectNextSuggestion()"
+                           @keydown.arrow-up.prevent="selectPrevSuggestion()"
+                           @keydown.enter.prevent="handleEnterKey()"
+                           @keydown.escape="closeSuggestions()"
+                           @blur="setTimeout(() => closeSuggestions(), 200)"
+                           placeholder="Type artist name" 
+                           class="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                           :class="{'border-red-500': error}">
+                    
+                    <!-- Suggestions Dropdown -->
+                    <div x-show="suggestions.length > 0"
+                         class="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+                        <template x-for="(suggestion, index) in suggestions" :key="suggestion.id">
+                            <div @click="selectSuggestion(suggestion)"
+                                 @mouseenter="selectedIndex = index"
+                                 class="px-4 py-2 cursor-pointer hover:bg-blue-50 text-left"
+                                 :class="{'bg-blue-50': selectedIndex === index}"
+                                 x-text="suggestion.name">
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <div x-show="error" 
+                         x-text="error"
+                         class="text-red-500 text-sm mt-2 animate-fade-in"></div>
+                </div>
+            </div>
+            
+            <button @click="startGame()"
+                    class="w-full sm:w-auto px-8 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                    :disabled="isLoading">
+                <span x-show="!isLoading">Start Game</span>
+                <span x-show="isLoading">Loading...</span>
+            </button>
+
+            <!-- High Score Display -->
+            <div x-show="lastHighScore" class="mt-8 pt-6 border-t">
+                <p class="text-gray-600">Your last high score for this artist:</p>
+                <p class="text-2xl font-bold text-blue-500" x-text="lastHighScore + ' points'"></p>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div x-show="currentScreen === 'game'" 
+             x-cloak
+             x-transition:enter="animate-fade-in"
+             class="max-w-2xl w-full mx-auto bg-white rounded-lg shadow-lg p-8">
+            <div class="flex justify-between items-center mb-8">
+                <div class="text-lg">Round: <span x-text="currentRound + '/' + totalRounds"></span></div>
+                <div class="text-lg">Score: <span x-text="score"></span></div>
+            </div>
+            
+            <!-- Hint Text -->
+            <div class="mb-4 text-center">
+                <div class="text-sm text-gray-500">
+                    Answer quickly for more points!
+                </div>
+            </div>
+            
+            <!-- Audio Controls -->
+            <div class="mb-8">
+                <!-- Progress Bar -->
+                <div class="h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
+                    <div class="h-full bg-blue-500 transition-all duration-300"
+                         :style="'width: ' + audioProgress + '%'"></div>
+                </div>
+                
+                <!-- Play/Pause Button -->
+                <div class="flex justify-center mb-6">
+                    <button @click="isPlaying ? audioManager.pause() : audioManager.resume()"
+                            class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        <span x-text="isPlaying ? 'Pause' : 'Play'"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Options Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <template x-for="option in currentOptions" :key="option">
+                    <button @click="submitGuess(option)"
+                            class="option-button p-6 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            :class="{
+                                'bg-green-100 hover:bg-green-100': option === lastGuess?.correctAnswer && lastGuess?.isCorrect,
+                                'bg-red-100 hover:bg-red-100': option === lastGuess?.guess && !lastGuess?.isCorrect,
+                                'pointer-events-none': lastGuess !== null
+                            }">
+                        <span x-text="option" class="text-lg"></span>
+                        
+                        <!-- Feedback Icons -->
+                        <span x-show="option === lastGuess?.correctAnswer && lastGuess?.isCorrect" 
+                              class="ml-2 text-green-500">✓</span>
+                        <span x-show="option === lastGuess?.guess && !lastGuess?.isCorrect" 
+                              class="ml-2 text-red-500">✗</span>
+                    </button>
+                </template>
+            </div>
+
+            <!-- Feedback Message -->
+            <div x-show="lastGuess !== null" 
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform translate-y-4"
+                 x-transition:enter-end="opacity-100 transform translate-y-0"
+                 class="mt-6 text-center">
+                <p x-show="lastGuess?.isCorrect" class="text-green-600 text-xl">
+                    Correct! +<span x-text="lastGuess?.pointsEarned"></span> points
+                </p>
+                <p x-show="!lastGuess?.isCorrect" class="text-red-600 text-xl">
+                    Wrong! The correct answer was <span x-text="lastGuess?.correctAnswer" class="font-bold"></span>
+                </p>
+                <p class="text-gray-600 mt-2">Next round starting in 2 seconds...</p>
+            </div>
+        </div>
+
+        <!-- Final Screen -->
+        <div x-show="currentScreen === 'final'"
+             x-cloak
+             x-transition:enter="animate-fade-in"
+             class="max-w-md w-full mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
+            <h2 class="text-3xl font-bold mb-4">Game Over!</h2>
+            <p class="text-xl mb-4">Final Score: <span x-text="score"></span></p>
+            <p class="text-lg mb-4" x-text="score >= 800 ? 'You\'re a Super Fan! 🌟' : 'You\'re a Fan! 👏'"></p>
+            
+            <!-- Player Name Input -->
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="playerName">
+                    Enter your name for the leaderboard:
+                </label>
+                <input type="text" 
+                       id="playerName"
+                       x-model="playerName"
+                       placeholder="Your name"
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p x-show="error" 
+                   x-text="error"
+                   class="mt-2 text-sm"
+                   :class="error?.includes('Score saved!') ? 'text-green-600' : 'text-red-600'"></p>
+            </div>
+
+            <button @click="saveScore()"
+                    class="w-full sm:w-auto px-8 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-lg font-medium mb-4"
+                    :disabled="scoreSaved"
+                    :class="{'opacity-50 cursor-not-allowed': scoreSaved}">
+                <span x-text="scoreSaved ? 'Score Saved!' : 'Save Score'"></span>
+            </button>
+
+            <button @click="resetGame()"
+                    class="w-full sm:w-auto px-8 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-lg font-medium">
+                Play Again
+            </button>
+
+            <!-- Leaderboard Section - Always visible -->
+            <div class="mt-8 pt-6 border-t">
+                <h3 class="text-xl font-bold mb-4">Top Scores for <span x-text="artist"></span></h3>
+                
+                <!-- No Scores Message -->
+                <div x-show="leaderboardScores.length === 0" 
+                     class="text-gray-500 py-4">
+                    No scores yet - be the first to get on the leaderboard!
+                </div>
+                
+                <!-- Scores List -->
+                <div x-show="leaderboardScores.length > 0" class="space-y-2">
+                    <template x-for="(score, index) in leaderboardScores" :key="index">
+                        <div class="flex items-center justify-between py-2 px-4 bg-gray-50 rounded-lg"
+                             :class="{'bg-yellow-50': score.isYou}">
+                            <div class="flex items-center">
+                                <span class="w-8 font-bold" x-text="'#' + (index + 1)"></span>
+                                <span class="font-medium" x-text="score.playerName"></span>
+                                <span x-show="score.isYou" class="ml-2 text-xs bg-yellow-200 px-2 py-1 rounded">You</span>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <span class="font-bold text-blue-500" x-text="score.score + ' pts'"></span>
+                                <span class="text-sm text-gray-500" x-text="score.formattedDate"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Panel -->
+    <div class="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg text-sm" 
+         x-data="{show: true}" 
+         x-show="show">
+        <h3 class="font-bold mb-2">Debug Panel</h3>
+        <div>Screen: <span x-text="currentScreen"></span></div>
+        <div>Artist: <span x-text="artist"></span></div>
+        <div>Score: <span x-text="score"></span></div>
+        <div>Round: <span x-text="currentRound"></span></div>
+        <div>Scripts Loaded: <span>Yes</span></div>
+        <button @click="show = false" class="absolute top-2 right-2 text-gray-500">&times;</button>
+    </div>
+
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </body>
 </html> 
