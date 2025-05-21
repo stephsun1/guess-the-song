@@ -13,41 +13,6 @@ class LeaderboardManager {
             localStorage.setItem(this.storageKey, JSON.stringify({}));
             localStorage.setItem(this.recentScoresKey, JSON.stringify([]));
         }
-        
-        // Add sample scores on initialization if no scores exist
-        this.initializeSampleScore();
-    }
-
-    // Initialize with a sample score
-    initializeSampleScore() {
-        console.log('Checking for existing scores...');
-        const existingScores = this.getRecentScores();
-        console.log('Existing scores:', existingScores);
-        
-        if (!Array.isArray(existingScores) || existingScores.length === 0) {
-            console.log('Adding sample scores...');
-            const sampleScores = [
-                {
-                    playerName: 'Taylor',
-                    artistName: 'The Beatles',
-                    score: 850,
-                    date: new Date().toISOString()
-                },
-                {
-                    playerName: 'Nick',
-                    artistName: 'Bob Dylan',
-                    score: 920,
-                    date: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
-                }
-            ];
-            
-            try {
-                localStorage.setItem(this.recentScoresKey, JSON.stringify(sampleScores));
-                console.log('Sample scores added successfully:', sampleScores);
-            } catch (error) {
-                console.error('Failed to add sample scores:', error);
-            }
-        }
     }
 
     // Get all scores for an artist
