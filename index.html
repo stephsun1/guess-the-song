@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Song</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/custom.css">
+</head>
+<body class="bg-yellow-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Welcome Screen -->
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
+            <h1 class="text-4xl font-bold mb-6">GUESS THE SONG</h1>
+            <p class="text-gray-600 mb-8">It's a game where you guess the song. Good luck.</p>
+            
+            <div class="mb-6">
+                <input type="text" 
+                       placeholder="Type artist" 
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <button class="bg-blue-500 text-white px-8 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                Start
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Scripts -->
+    <script src="assets/js/app.js"></script>
+    <script src="assets/js/spotify.js"></script>
+    <script src="assets/js/audio.js"></script>
+    <script src="assets/js/game.js"></script>
+    <script src="assets/js/storage.js"></script>
+</body>
+</html> 

@@ -1,0 +1,58 @@
+/* Custom animations and transitions */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Custom utility classes */
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slide-in {
+    animation: slideIn 0.5s ease-in-out;
+}
+
+/* Custom styles for audio progress bar */
+.audio-progress {
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.audio-progress-bar {
+    height: 100%;
+    background: #3b82f6;
+    transition: width 0.1s linear;
+}
+
+/* Custom focus styles */
+.focus-ring {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+/* Game option button styles */
+.option-button {
+    transition: all 0.2s ease-in-out;
+}
+
+.option-button:hover {
+    transform: translateY(-2px);
+}
+
+.option-button.correct {
+    background-color: #10B981;
+    color: white;
+}
+
+.option-button.incorrect {
+    background-color: #EF4444;
+    color: white;
+} 
