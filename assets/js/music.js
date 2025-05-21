@@ -91,27 +91,60 @@ class MusicManager {
         }
 
         try {
-            const url = `${this.apiBase}/search?term=${encodeURIComponent(artistName)}&entity=musicArtist&limit=1`;
-            const response = await fetch(this.getProxiedUrl(url));
+            console.log('Searching for artist:', artistName);
+            const url = `${this.apiBase}/search?term=${encodeURIComponent(artistName)}&entity=musicArtist&attribute=artistTerm&limit=5`;
+            const finalUrl = this.getProxiedUrl(url);
+            console.log('Search URL:', finalUrl);
+            
+            const response = await fetch(finalUrl);
+            console.log('Search response status:', response.status);
 
             if (!response.ok) {
-                throw new Error('Artist search failed');
+                throw new Error(`Artist search failed with status ${response.status}`);
             }
 
             const data = await response.json();
-            const artist = data.results[0];
+            console.log('Search results:', data.results);
             
-            return artist ? {
-                id: artist.artistId,
-                name: artist.artistName,
-                type: 'artist'
-            } : null;
+            // Look for exact or close matches first
+            const exactMatch = data.results.find(a => 
+                a.artistName.toLowerCase() === artistName.toLowerCase()
+            );
+            
+            // If no exact match, take the first result
+            const artist = exactMatch || data.results[0];
+            
+            if (artist) {
+                console.log('Found artist:', artist.artistName);
+                return {
+                    id: artist.artistId,
+                    name: artist.artistName,
+                    type: 'artist'
+                };
+            }
+            
+            console.log('No artist found, trying fallback data');
+            // Fallback to test data with more flexible matching
+            const fallbackArtist = testData.artists.find(a => 
+                a.name.toLowerCase().includes(artistName.toLowerCase()) ||
+                artistName.toLowerCase().includes(a.name.toLowerCase())
+            );
+            
+            if (fallbackArtist) {
+                console.log('Found artist in fallback data:', fallbackArtist.name);
+            } else {
+                console.log('Artist not found in fallback data either');
+            }
+            
+            return fallbackArtist || null;
         } catch (error) {
             console.error('Artist search error:', error);
-            // Fallback to test data
-            return testData.artists.find(a => 
-                a.name.toLowerCase() === artistName.toLowerCase()
+            // More flexible fallback search
+            const fallbackArtist = testData.artists.find(a => 
+                a.name.toLowerCase().includes(artistName.toLowerCase()) ||
+                artistName.toLowerCase().includes(a.name.toLowerCase())
             );
+            return fallbackArtist || null;
         }
     }
 
