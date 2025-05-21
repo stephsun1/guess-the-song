@@ -20,6 +20,9 @@ window.gameData = {
     lastHighScore: null,
     currentOptions: [],
     
+    // Recent Scores
+    recentScores: [],
+    
     // Suggestion State
     suggestions: [],
     selectedIndex: -1,
@@ -33,39 +36,68 @@ window.gameData = {
     async init() {
         console.log('Initializing game data...');
         try {
-            // Initialize audio first
-            if (typeof audioManager !== 'undefined') {
-                console.log('Setting up audio...');
-                audioManager.initialize();
-                
-                // Test audio setup
-                const testAudio = new Audio();
-                testAudio.volume = 1;
-                console.log('Audio test setup complete');
-                
-                // Set up progress callback
-                audioManager.setProgressCallback((progress) => {
-                    this.audioProgress = progress;
-                    this.isPlaying = audioManager.isPlaying;
-                });
-            } else {
+            // Check for required managers
+            if (typeof audioManager === 'undefined') {
                 throw new Error('Audio manager not loaded');
             }
-
-            // Initialize music manager
-            if (typeof musicManager !== 'undefined') {
-                await musicManager.initialize();
-            } else {
-                console.warn('musicManager not loaded yet');
+            if (typeof musicManager === 'undefined') {
+                throw new Error('Music manager not loaded');
+            }
+            if (typeof leaderboardManager === 'undefined') {
+                throw new Error('Leaderboard manager not loaded');
             }
             
+            // Initialize audio first
+            console.log('Setting up audio...');
+            await audioManager.initialize();
+            
+            // Test audio setup
+            const testAudio = new Audio();
+            testAudio.volume = 1;
+            console.log('Audio test setup complete');
+            
+            // Set up progress callback
+            audioManager.setProgressCallback((progress) => {
+                this.audioProgress = progress;
+                this.isPlaying = audioManager.isPlaying;
+            });
+
+            // Initialize music manager
+            console.log('Initializing music manager...');
+            await musicManager.initialize();
+            console.log('Music manager initialized');
+            
+            // Load recent scores
+            console.log('Loading recent scores...');
+            this.loadRecentScores();
+            
             this.checkLastHighScore();
+            this.error = null; // Clear any previous errors
             console.log('Game data initialized successfully');
-            console.log('Current screen:', this.currentScreen);
         } catch (error) {
             console.error('Error during initialization:', error);
-            this.error = 'Failed to initialize game. Please refresh the page.';
+            this.error = `Failed to initialize game: ${error.message}. Please refresh the page.`;
         }
+    },
+
+    // Load recent scores
+    loadRecentScores() {
+        console.log('loadRecentScores called');
+        if (typeof leaderboardManager !== 'undefined') {
+            console.log('LeaderboardManager available, getting scores...');
+            const scores = leaderboardManager.getRecentScores();
+            console.log('Got scores from leaderboard:', scores);
+            this.recentScores = scores;
+            console.log('Updated recentScores state:', this.recentScores);
+        } else {
+            console.warn('LeaderboardManager not available');
+            this.recentScores = [];
+        }
+    },
+
+    // Format score for display
+    formatScore(score) {
+        return score.toLocaleString() + ' pts';
     },
 
     // Check for previous high score
@@ -267,6 +299,9 @@ window.gameData = {
                        score.score === this.score
             }));
 
+            // Refresh recent scores
+            this.loadRecentScores();
+
             this.scoreSaved = true;
             
             // Show success message
@@ -355,6 +390,21 @@ window.gameData = {
     }
 };
 
+// Initialize game data immediately
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM Content Loaded - initializing game...');
+        window.gameData.init().catch(error => {
+            console.error('Failed to initialize game:', error);
+        });
+    });
+} else {
+    console.log('DOM already loaded - initializing game...');
+    window.gameData.init().catch(error => {
+        console.error('Failed to initialize game:', error);
+    });
+}
+
 // Make sure Alpine is available and initialized properly
 document.addEventListener('alpine:init', () => {
     console.log('Alpine.js initialized');
@@ -366,4 +416,12 @@ document.addEventListener('alpine:init', () => {
 });
 
 // Debug logging
-console.log('App.js fully loaded'); 
+console.log('App.js fully loaded');
+
+// Force refresh of recent scores after a short delay
+setTimeout(() => {
+    if (window.gameData) {
+        console.log('Forcing refresh of recent scores');
+        window.gameData.loadRecentScores();
+    }
+}, 1000); 

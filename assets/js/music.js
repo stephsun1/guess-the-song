@@ -4,15 +4,50 @@ class MusicManager {
     constructor() {
         this.isInitialized = false;
         this.apiBase = 'https://itunes.apple.com';
+        this.corsProxy = 'https://api.allorigins.win/raw?url=';
         this.searchCache = new Map(); // Cache for search results
         this.searchDebounceTimeout = null;
     }
 
     // Initialize Music API
     async initialize() {
-        if (this.isInitialized) return;
-        this.isInitialized = true;
-        console.log('Music Manager initialized');
+        if (this.isInitialized) {
+            console.log('MusicManager already initialized');
+            return true;
+        }
+
+        try {
+            console.log('Testing iTunes API connection...');
+            // Test the API with a simple search
+            const testUrl = `${this.apiBase}/search?term=test&limit=1`;
+            const response = await fetch(this.getProxiedUrl(testUrl));
+            
+            if (!response.ok) {
+                throw new Error(`API test failed with status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (!data || typeof data !== 'object') {
+                throw new Error('Invalid API response format');
+            }
+
+            this.isInitialized = true;
+            console.log('MusicManager initialized successfully');
+            return true;
+        } catch (error) {
+            console.error('Failed to initialize MusicManager:', error);
+            this.isInitialized = false;
+            throw new Error('Failed to connect to music service');
+        }
+    }
+
+    // Helper method to create proxied URL
+    getProxiedUrl(url) {
+        // Only use proxy in production (GitHub Pages)
+        if (window.location.hostname.includes('github.io')) {
+            return `${this.corsProxy}${encodeURIComponent(url)}`;
+        }
+        return url;
     }
 
     // Search for artist suggestions
@@ -26,9 +61,8 @@ class MusicManager {
         }
 
         try {
-            const response = await fetch(
-                `${this.apiBase}/search?term=${encodeURIComponent(query)}&entity=musicArtist&limit=5`
-            );
+            const url = `${this.apiBase}/search?term=${encodeURIComponent(query)}&entity=musicArtist&limit=5`;
+            const response = await fetch(this.getProxiedUrl(url));
 
             if (!response.ok) {
                 throw new Error('Artist suggestion search failed');
@@ -50,20 +84,6 @@ class MusicManager {
         }
     }
 
-    // Debounced search for suggestions
-    async getArtistSuggestions(query) {
-        return new Promise((resolve) => {
-            if (this.searchDebounceTimeout) {
-                clearTimeout(this.searchDebounceTimeout);
-            }
-            
-            this.searchDebounceTimeout = setTimeout(async () => {
-                const suggestions = await this.searchArtistSuggestions(query);
-                resolve(suggestions);
-            }, 300); // Wait 300ms before searching
-        });
-    }
-
     // Search for an artist
     async searchArtist(artistName) {
         if (!this.isInitialized) {
@@ -71,9 +91,8 @@ class MusicManager {
         }
 
         try {
-            const response = await fetch(
-                `${this.apiBase}/search?term=${encodeURIComponent(artistName)}&entity=musicArtist&limit=1`
-            );
+            const url = `${this.apiBase}/search?term=${encodeURIComponent(artistName)}&entity=musicArtist&limit=1`;
+            const response = await fetch(this.getProxiedUrl(url));
 
             if (!response.ok) {
                 throw new Error('Artist search failed');
@@ -103,9 +122,8 @@ class MusicManager {
         }
 
         try {
-            const response = await fetch(
-                `${this.apiBase}/lookup?id=${artistId}&entity=song&limit=25`
-            );
+            const url = `${this.apiBase}/lookup?id=${artistId}&entity=song&limit=25`;
+            const response = await fetch(this.getProxiedUrl(url));
 
             if (!response.ok) {
                 throw new Error('Failed to fetch artist tracks');
@@ -135,9 +153,8 @@ class MusicManager {
         }
 
         try {
-            const response = await fetch(
-                `${this.apiBase}/lookup?id=${trackId}&entity=song`
-            );
+            const url = `${this.apiBase}/lookup?id=${trackId}&entity=song`;
+            const response = await fetch(this.getProxiedUrl(url));
 
             if (!response.ok) {
                 throw new Error('Failed to fetch track preview');
@@ -151,6 +168,20 @@ class MusicManager {
             const track = testData.tracks.find(t => t.id === trackId);
             return track ? track.previewUrl : null;
         }
+    }
+
+    // Debounced search for suggestions
+    async getArtistSuggestions(query) {
+        return new Promise((resolve) => {
+            if (this.searchDebounceTimeout) {
+                clearTimeout(this.searchDebounceTimeout);
+            }
+            
+            this.searchDebounceTimeout = setTimeout(async () => {
+                const suggestions = await this.searchArtistSuggestions(query);
+                resolve(suggestions);
+            }, 300); // Wait 300ms before searching
+        });
     }
 }
 

@@ -2,7 +2,52 @@
 
 class LeaderboardManager {
     constructor() {
+        console.log('Initializing LeaderboardManager');
         this.storageKey = 'artistLeaderboards';
+        this.recentScoresKey = 'recentScores';
+        this.maxRecentScores = 10; // Keep track of 10 most recent scores
+        
+        // Initialize storage if needed
+        if (!localStorage.getItem(this.recentScoresKey)) {
+            console.log('Initializing storage with empty arrays');
+            localStorage.setItem(this.storageKey, JSON.stringify({}));
+            localStorage.setItem(this.recentScoresKey, JSON.stringify([]));
+        }
+        
+        // Add sample scores on initialization if no scores exist
+        this.initializeSampleScore();
+    }
+
+    // Initialize with a sample score
+    initializeSampleScore() {
+        console.log('Checking for existing scores...');
+        const existingScores = this.getRecentScores();
+        console.log('Existing scores:', existingScores);
+        
+        if (!Array.isArray(existingScores) || existingScores.length === 0) {
+            console.log('Adding sample scores...');
+            const sampleScores = [
+                {
+                    playerName: 'Taylor',
+                    artistName: 'The Beatles',
+                    score: 850,
+                    date: new Date().toISOString()
+                },
+                {
+                    playerName: 'Nick',
+                    artistName: 'Bob Dylan',
+                    score: 920,
+                    date: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
+                }
+            ];
+            
+            try {
+                localStorage.setItem(this.recentScoresKey, JSON.stringify(sampleScores));
+                console.log('Sample scores added successfully:', sampleScores);
+            } catch (error) {
+                console.error('Failed to add sample scores:', error);
+            }
+        }
     }
 
     // Get all scores for an artist
@@ -40,8 +85,65 @@ class LeaderboardManager {
         // Save to localStorage
         this.saveLeaderboards(leaderboards);
 
+        // Add to recent scores
+        this.addRecentScore(artistName, score, playerName);
+
         // Return position in leaderboard (1-based)
         return leaderboards[normalizedArtist].findIndex(s => s === newScore) + 1;
+    }
+
+    // Add a score to recent scores
+    addRecentScore(artistName, score, playerName) {
+        console.log('Adding new score:', { artistName, score, playerName });
+        const recentScores = this.getRecentScores();
+        
+        // Add new score with artist name
+        const newScore = {
+            playerName,
+            artistName,
+            score,
+            date: new Date().toISOString()
+        };
+        
+        recentScores.unshift(newScore);
+
+        // Keep only the most recent scores
+        const updatedScores = recentScores.slice(0, this.maxRecentScores);
+        
+        // Save to localStorage
+        localStorage.setItem(this.recentScoresKey, JSON.stringify(updatedScores));
+        console.log('Updated recent scores:', updatedScores);
+    }
+
+    // Get recent scores across all artists
+    getRecentScores() {
+        console.log('Getting recent scores...');
+        try {
+            const data = localStorage.getItem(this.recentScoresKey);
+            console.log('Raw recent scores data:', data);
+            
+            if (!data) {
+                console.log('No recent scores found, returning empty array');
+                return [];
+            }
+            
+            const scores = JSON.parse(data);
+            
+            if (!Array.isArray(scores)) {
+                console.warn('Invalid scores data format, resetting to empty array');
+                localStorage.setItem(this.recentScoresKey, JSON.stringify([]));
+                return [];
+            }
+            
+            // Add timeAgo to each score
+            return scores.map(score => ({
+                ...score,
+                timeAgo: this.formatTimeAgo(score.date)
+            }));
+        } catch (error) {
+            console.error('Error getting recent scores:', error);
+            return [];
+        }
     }
 
     // Get formatted date string
@@ -52,6 +154,26 @@ class LeaderboardManager {
             day: 'numeric',
             year: 'numeric'
         });
+    }
+
+    // Format time ago
+    formatTimeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+        
+        if (seconds < 60) return 'just now';
+        
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        
+        return this.formatDate(dateString);
     }
 
     // Get all leaderboards from storage
@@ -68,8 +190,13 @@ class LeaderboardManager {
     // Clear all leaderboards (for testing)
     clearLeaderboards() {
         localStorage.removeItem(this.storageKey);
+        localStorage.removeItem(this.recentScoresKey);
     }
 }
 
-// Export singleton instance
-window.leaderboardManager = new LeaderboardManager(); 
+// Create and export singleton instance
+window.leaderboardManager = new LeaderboardManager();
+
+// Verify initialization
+console.log('LeaderboardManager initialized:', window.leaderboardManager);
+console.log('Initial recent scores:', window.leaderboardManager.getRecentScores()); 
