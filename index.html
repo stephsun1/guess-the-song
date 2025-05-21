@@ -58,9 +58,9 @@
         <div x-show="currentScreen === 'welcome'" 
              x-cloak
              x-transition:enter="animate-fade-in"
-             class="max-w-2xl w-full mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
+             class="max-w-lg w-full mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
             <h1 class="text-4xl md:text-5xl font-bold mb-6 animate-slide-in whitespace-nowrap">Guess the song <span class="inline-block">🎵</span></h1>
-            <p class="text-gray-600 mb-8 text-lg">It's a game where you guess the song. Good luck.</p>
+            <p class="text-gray-600 mb-8 text-lg">It's a game where you guess the song to see if you're a true fan or a poser.</p>
             
             <div class="mb-6">
                 <label class="block text-lg font-medium text-gray-700 mb-2 text-left">Type an artist's name</label>
@@ -212,10 +212,87 @@
         <div x-show="currentScreen === 'final'"
              x-cloak
              x-transition:enter="animate-fade-in"
-             class="max-w-md w-full mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
+             class="max-w-lg w-full mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
             <h2 class="text-3xl font-bold mb-4">Game Over!</h2>
-            <p class="text-xl mb-4">Final Score: <span x-text="score"></span></p>
-            <p class="text-lg mb-4" x-text="score >= 800 ? 'You\'re a Super Fan! 🌟' : 'You\'re a Fan! 👏'"></p>
+            <p class="text-xl mb-4">Final Score: <span x-text="currentRound + '/10'"></span></p>
+            
+            <!-- Score-based messages -->
+            <template x-if="currentRound === 0">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">Who are you?? 🤔</p>
+                    <p class="text-gray-600">Did you click the wrong link? Because you've never heard a single song here. POSER with a capital P.</p>
+                </div>
+            </template>
+            
+            <template x-if="currentRound === 1">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">Background noise level. 🔇</p>
+                    <p class="text-gray-600">You've technically heard one song… maybe at the mall. Barely counts. We're squinting.</p>
+                </div>
+            </template>
+            
+            <template x-if="currentRound === 2">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">Playlist filler. 📝</p>
+                    <p class="text-gray-600">You know of the artist, kind of like how you know about taxes. Not a fan—just adjacent.</p>
+                </div>
+            </template>
+            
+            <template x-if="currentRound === 3">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">Spotify algorithm friend. 🎧</p>
+                    <p class="text-gray-600">You let the algorithm take the wheel and it shows. You're vibing, but you don't know.</p>
+                </div>
+            </template>
+            
+            <template x-if="currentRound === 4">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">Casual toe-tapper. 👣</p>
+                    <p class="text-gray-600">You've tapped your foot to a few hits, sure. But don't show up wearing the merch yet.</p>
+                </div>
+            </template>
+            
+            <template x-if="currentRound === 5">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">Mid-tier fan behavior. 🎵</p>
+                    <p class="text-gray-600">Halfway there! You've got taste, but you're still Googling lyrics when you sing along.</p>
+                </div>
+            </template>
+            
+            <template x-if="currentRound === 6">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">You own a hoodie, don't you? 👕</p>
+                    <p class="text-gray-600">You're trying. You know your choruses. But real fans don't skip the deep cuts.</p>
+                </div>
+            </template>
+            
+            <template x-if="currentRound === 7">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">Almost certified. 📜</p>
+                    <p class="text-gray-600">Close! You're walking the line between poser and disciple. One more concert might do it.</p>
+                </div>
+            </template>
+            
+            <template x-if="currentRound === 8">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">Deep cut connoisseur. 💿</p>
+                    <p class="text-gray-600">You've cried to a B-side and argued about setlists. You're in. You get it.</p>
+                </div>
+            </template>
+            
+            <template x-if="currentRound === 9">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">Basically on the tour bus. 🚌</p>
+                    <p class="text-gray-600">You could be the opening act's emotional support. You've studied. We respect it.</p>
+                </div>
+            </template>
+            
+            <template x-if="currentRound === 10">
+                <div class="mb-6">
+                    <p class="text-xl font-bold mb-2">True Fan Royalty 👑</p>
+                    <p class="text-gray-600">You ARE the moment. You quote lyrics like scripture. Posers fear you. Legends applaud.</p>
+                </div>
+            </template>
             
             <!-- Player Name Input -->
             <div class="mb-6">
