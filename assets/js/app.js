@@ -5,7 +5,6 @@ console.log('Loading app.js...');
 window.gameData = {
     // UI State
     currentScreen: 'welcome',
-    isLoading: false,
     error: null,
     audioProgress: 0,
     isPlaying: false,
@@ -115,8 +114,6 @@ window.gameData = {
             return;
         }
 
-        this.isLoading = true;
-        this.error = null;
         this.score = 0;
         this.currentRound = 0;
         this.lastGuess = null;
@@ -137,8 +134,6 @@ window.gameData = {
         } catch (error) {
             console.error('Game start error:', error);
             this.error = 'Could not find artist. Please try another name.';
-        } finally {
-            this.isLoading = false;
         }
     },
 
