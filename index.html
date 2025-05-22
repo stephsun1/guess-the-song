@@ -76,32 +76,6 @@
                 Start Game
             </button>
 
-            <!-- Recent Scores -->
-            <div class="border-t pt-6 text-left">
-                <h2 class="text-xl font-bold mb-4 text-center">Recent Scores</h2>
-                <!-- No scores message -->
-                <div x-show="!recentScores.length" 
-                     class="text-center text-gray-500 py-4">
-                    Play the game to see scores!
-                </div>
-                <!-- Scores list -->
-                <div x-show="recentScores.length > 0" class="space-y-3">
-                    <template x-for="score in recentScores" :key="score.date">
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                            <div class="flex-1">
-                                <div class="font-medium" x-text="score.playerName"></div>
-                                <div class="text-sm text-gray-500">
-                                    <span x-text="score.artistName"></span>
-                                    <span class="mx-1">•</span>
-                                    <span x-text="score.timeAgo"></span>
-                                </div>
-                            </div>
-                            <div class="font-bold text-blue-500" x-text="formatScore(score.score)"></div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-
             <!-- High Score Display -->
             <div x-show="lastHighScore" class="mt-8 pt-6 border-t">
                 <p class="text-gray-600">Your last high score for this artist:</p>

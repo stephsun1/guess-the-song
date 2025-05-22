@@ -19,9 +19,6 @@ window.gameData = {
     lastHighScore: null,
     currentOptions: [],
     
-    // Recent Scores
-    recentScores: [],
-    
     // Suggestion State
     suggestions: [],
     selectedIndex: -1,
@@ -66,31 +63,12 @@ window.gameData = {
             await musicManager.initialize();
             console.log('Music manager initialized');
             
-            // Load recent scores
-            console.log('Loading recent scores...');
-            this.loadRecentScores();
-            
             this.checkLastHighScore();
             this.error = null; // Clear any previous errors
             console.log('Game data initialized successfully');
         } catch (error) {
             console.error('Error during initialization:', error);
             this.error = `Failed to initialize game: ${error.message}. Please refresh the page.`;
-        }
-    },
-
-    // Load recent scores
-    loadRecentScores() {
-        console.log('loadRecentScores called');
-        if (typeof leaderboardManager !== 'undefined') {
-            console.log('LeaderboardManager available, getting scores...');
-            const scores = leaderboardManager.getRecentScores();
-            console.log('Got scores from leaderboard:', scores);
-            this.recentScores = scores;
-            console.log('Updated recentScores state:', this.recentScores);
-        } else {
-            console.warn('LeaderboardManager not available');
-            this.recentScores = [];
         }
     },
 
@@ -294,9 +272,6 @@ window.gameData = {
                        score.score === this.score
             }));
 
-            // Refresh recent scores
-            this.loadRecentScores();
-
             this.scoreSaved = true;
             
             // Show success message
@@ -411,12 +386,4 @@ document.addEventListener('alpine:init', () => {
 });
 
 // Debug logging
-console.log('App.js fully loaded');
-
-// Force refresh of recent scores after a short delay
-setTimeout(() => {
-    if (window.gameData) {
-        console.log('Forcing refresh of recent scores');
-        window.gameData.loadRecentScores();
-    }
-}, 1000); 
+console.log('App.js fully loaded'); 
